@@ -53,8 +53,6 @@ end)
 scrollBar:SetValue(select(2, scrollBar:GetMinMaxValues()))
 
 checkGear:SetScript("OnMouseWheel", function(self, delta)
-	print(messageFrame:GetNumMessages(), messageFrame:GetNumLinesDisplayed())
-
 	local cur_val = scrollBar:GetValue()
 	local min_val, max_val = scrollBar:GetMinMaxValues()
 
@@ -86,13 +84,10 @@ local found = false
 
 checkGear:SetScript("OnEvent", function(self, event, ...)
     if event=="INSPECT_READY" then
-        print("INSPECT_READY")
         checkGear:InspectReady()
-      elseif event=="GROUP_ROSTER_UPDATE" then
-        print("GROUP_ROSTER_UPDATE")
+    elseif event=="GROUP_ROSTER_UPDATE" then
         checkGear:InspectNextUnit()
-      elseif event=="LOOT_OPENED" then
-        print("LOOT_OPENED")
+    elseif event=="LOOT_OPENED" then
   --  partySize = GetNumGroupMembers();
 
  --   if partySize > 0 then
@@ -100,10 +95,8 @@ checkGear:SetScript("OnEvent", function(self, event, ...)
 
     numLootItems = GetNumLootItems();
     for i = 1, numLootItems do
-        print("test")
         local itemName2 = GetItemInfo(GetLootSlotLink(i));
         messageFrame:AddMessage("\n" .. itemName2)
-        print("avant pairs")
         for k, v in pairs(checkGear.known) do
             for j = 1, 17 do
                 if v[j]==itemName2 then
@@ -118,65 +111,58 @@ checkGear:SetScript("OnEvent", function(self, event, ...)
             end
             found = false
         end
-        print("apres pairs")
     end
 
-    if numLootItems > 0 then
-        checkGear:Show();
+        if numLootItems > 0 then
+            checkGear:Show();
+        end
+    --  end
     end
---  end
-      end
 end)
 
 local function dostuff(unit,name)
-    print("tout debut doStuff")
     checkGear.known[name] = {}
     local ilevel = 0
-    print("debut doStuff")
     for i=1,17 do
        itemName = GetItemInfo(GetInventoryItemID(unit,i))
        checkGear.known[name][i] = itemName
     end
-    print("fin doStuff")
 end
 
 checkGear:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 function checkGear:InspectNextUnit()
     if IsInGroup() then
-      local inRaid = IsInRaid()
-      local oor
-      for i=1,GetNumGroupMembers() do
-        local unit = inRaid and "raid"..i or i==1 and "player" or "party"..(i-1)
-        local name = GetUnitName(unit,true)
-        print("Check si connu")
-        if not checkGear.known[name] and CanInspect(unit) then
-          if CheckInteractDistance(unit,1) then
-            checkGear.unit = unit
-            checkGear.name = name
-            print(name)
-            NotifyInspect(unit)
-            checkGear:RegisterEvent("INSPECT_READY")
-            return
-          else
-            oor = true
-          end
+        local inRaid = IsInRaid()
+        local oor
+        for i=1,GetNumGroupMembers() do
+            local unit = inRaid and "raid"..i or i==1 and "player" or "party"..(i-1)
+            local name = GetUnitName(unit,true)
+            if not checkGear.known[name] and CanInspect(unit) then
+            if CheckInteractDistance(unit,1) then
+                checkGear.unit = unit
+                checkGear.name = name
+                NotifyInspect(unit)
+                checkGear:RegisterEvent("INSPECT_READY")
+                return
+            else
+                oor = true
+            end
+            end
         end
-      end
-      print("manque des types")
-      if oor then
-        checkGear.timer = 3
-        checkGear:SetScript("OnUpdate",checkGear.WaitForOOR)
-        return
-      end
+        if oor then
+            checkGear.timer = 3
+            checkGear:SetScript("OnUpdate",checkGear.WaitForOOR)
+            return
+        end
     end
 end
 
 function checkGear:WaitForOOR(elapsed)
     self.timer = self.timer - elapsed
     if self.timer < 0 then
-      self:SetScript("OnUpdate",nil)
-      self:InspectNextUnit()
+        self:SetScript("OnUpdate",nil)
+        self:InspectNextUnit()
     end
 end
 
@@ -186,18 +172,16 @@ function checkGear:InspectReady()
     local unit = checkGear.unit
     local missing
     for i=1,17 do
-      if GetInventoryItemID(unit,i) and not GetInventoryItemLink(unit,i) then
-        missing = true
-      end
+        if GetInventoryItemID(unit,i) and not GetInventoryItemLink(unit,i) then
+            missing = true
+        end
     end
 
-    print("check missing")
     if missing then
-      checkGear:SetScript("OnUpdate",checkGear.InspectReady)
-      return
+        checkGear:SetScript("OnUpdate",checkGear.InspectReady)
+        return
     end
 
-    print("doStuff")
     dostuff(unit,checkGear.name)
     checkGear:InspectNextUnit()
 end
