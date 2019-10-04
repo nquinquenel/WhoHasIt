@@ -1,0 +1,6 @@
+## Interface: 11302
+## Title: WhoHasIt
+## Author: nquinquenel
+## Version: 0.1
+
+WhoHasIt.lua
