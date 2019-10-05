@@ -1,17 +1,18 @@
 -- Main Frame
 local checkGear = CreateFrame("Frame")
-checkGear.width = 500
-checkGear.height = 250
+checkGear.width = 200
+checkGear.height = 300
 checkGear:SetFrameStrata("FULLSCREEN_DIALOG")
 checkGear:SetSize(checkGear.width, checkGear.height)
 checkGear:SetPoint("CENTER",0,0)
 checkGear:SetMovable(true)
-checkGear:SetResizable(enable)
+checkGear:SetResizable(true)
 checkGear:EnableMouse(true)
 checkGear:EnableMouseWheel(true)
 checkGear:RegisterForDrag("LeftButton")
 checkGear:SetScript("OnDragStart", checkGear.StartMoving)
 checkGear:SetScript("OnDragStop", checkGear.StopMovingOrSizing)
+checkGear:SetMinResize(150,125)
 
 checkGear:SetBackdrop({
 	bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -23,12 +24,28 @@ checkGear:SetBackdrop({
 })
 checkGear:SetBackdropColor(0, 0, 0, 1)
 
+local resizeButton = CreateFrame("Button", nil, checkGear)
+resizeButton:SetSize(16, 16)
+resizeButton:SetPoint("BOTTOMRIGHT")
+resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+
+resizeButton:SetScript("OnMouseDown", function(self, button)
+    checkGear:StartSizing("BOTTOMRIGHT")
+    checkGear:SetUserPlaced(true)
+end)
+ 
+resizeButton:SetScript("OnMouseUp", function(self, button)
+    checkGear:StopMovingOrSizing()
+end)
+
 tinsert(UISpecialFrames, "AnimorHistoryFrame")
 
 -- Stuff Frame
 local messageFrame = CreateFrame("ScrollingMessageFrame", nil, checkGear)
-messageFrame:SetPoint("CENTER", 15, 20)
-messageFrame:SetSize(checkGear.width, checkGear.height - 50)
+messageFrame:SetPoint("LEFT", 20, 0)
+messageFrame:SetSize(checkGear.width - 60, checkGear.height - 50)
 messageFrame:SetFontObject(GameFontNormal)
 messageFrame:SetTextColor(1, 1, 1, 1)
 messageFrame:SetJustifyH("LEFT")
@@ -65,6 +82,11 @@ checkGear:SetScript("OnMouseWheel", function(self, delta)
 	end
 end)
 
+checkGear:SetScript("OnSizeChanged", function(_, w, h) 
+    messageFrame:SetSize(w - 60, h - 50)
+    scrollBar:SetHeight(h - 90) 
+end)
+
 -- Exit Button
 local b = CreateFrame("Button", "MyButton", checkGear, "UIPanelButtonTemplate")
 b:SetSize(80 ,22)
@@ -91,7 +113,6 @@ checkGear:SetScript("OnEvent", function(self, event, ...)
   --  partySize = GetNumGroupMembers();
 
  --   if partySize > 0 then
-    messageFrame:AddMessage("Liste de stuff :\n")
 
     numLootItems = GetNumLootItems();
     for i = 1, numLootItems do
