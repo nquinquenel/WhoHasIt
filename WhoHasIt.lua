@@ -1,7 +1,7 @@
 -- Main Frame
 local checkGear = CreateFrame("Frame")
 checkGear.width = 200
-checkGear.height = 300
+checkGear.height = 225
 checkGear:SetFrameStrata("FULLSCREEN_DIALOG")
 checkGear:SetSize(checkGear.width, checkGear.height)
 checkGear:SetPoint("CENTER",0,0)
@@ -209,3 +209,13 @@ function checkGear:InspectReady()
     dostuff(unit,checkGear.name)
     checkGear:InspectNextUnit()
 end
+
+SLASH_WHOHASIT1 = "/whi";
+
+local function WHOHASITfunc(msg)
+    checkGear:Show()
+end
+
+SlashCmdList["WHOHASIT"] = WHOHASITfunc; 
+
+print("Use /whi to open the frame")
