@@ -100,6 +100,7 @@ checkGear:Show()
 
 checkGear:RegisterEvent("LOOT_OPENED");
 checkGear:RegisterEvent("AUTOFOLLOW_BEGIN");
+checkGear:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 checkGear.known = {}
 local found = false
@@ -110,66 +111,65 @@ checkGear:SetScript("OnEvent", function(self, event, ...)
     elseif event=="GROUP_ROSTER_UPDATE" then
         checkGear:InspectNextUnit()
     elseif event=="LOOT_OPENED" then
-  --  partySize = GetNumGroupMembers();
+        partySize = GetNumGroupMembers();
 
- --   if partySize > 0 then
+        if partySize > 1 then
+            for i = 1, GetNumLootItems() do
+                if LootSlotHasItem(i) then
+                    local itemName2, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount,
+                    itemEquipLoc, itemIcon, itemSellPrice, itemClassID = GetItemInfo(GetLootSlotLink(i));
+                    if (itemRarity > 1) and (itemClassID == (2 or 4))  then
+                        messageFrame:AddMessage("\n" .. itemName2)
+                        for k, v in pairs(checkGear.known) do
+                            for j = 1, 17 do
+                                if v[j]==itemName2 then
+                                    found = true
+                                    break
+                                end
+                            end
 
-    numLootItems = GetNumLootItems();
-    for i = 1, numLootItems do
-        local itemName2 = GetItemInfo(GetLootSlotLink(i));
-        messageFrame:AddMessage("\n" .. itemName2)
-        for k, v in pairs(checkGear.known) do
-            for j = 1, 17 do
-                if v[j]==itemName2 then
-                    found = true
+                            if found then
+                                messageFrame:AddMessage(k .. " : Yes")
+                            else
+                                messageFrame:AddMessage(k .. " : No")
+                            end
+                            found = false
+                        end
+                        checkGear:Show();
+                    end
                 end
             end
-
-            if found then
-                messageFrame:AddMessage(k .. " : Yes")
-            else
-                messageFrame:AddMessage(k .. " : No")
-            end
-            found = false
         end
-    end
-
-        if numLootItems > 0 then
-            checkGear:Show();
-        end
-    --  end
     end
 end)
 
 local function dostuff(unit,name)
-    checkGear.known[name] = {}
-    local ilevel = 0
-    for i=1,17 do
+    for i=1, 17 do
        itemName = GetItemInfo(GetInventoryItemID(unit,i))
        checkGear.known[name][i] = itemName
     end
 end
 
-checkGear:RegisterEvent("GROUP_ROSTER_UPDATE")
-
 function checkGear:InspectNextUnit()
     if IsInGroup() then
         local inRaid = IsInRaid()
-        local oor
+        local oor = false
         for i=1,GetNumGroupMembers() do
             local unit = inRaid and "raid"..i or i==1 and "player" or "party"..(i-1)
             local name = GetUnitName(unit,true)
-            if not checkGear.known[name] and CanInspect(unit) then
-            if CheckInteractDistance(unit,1) then
-                checkGear.unit = unit
-                checkGear.name = name
-                NotifyInspect(unit)
-                checkGear:RegisterEvent("INSPECT_READY")
-                return
-            else
-                oor = true
+            if ((checkGear.known[name] == nil) or (not checkGear.known[name])) then
+                if CheckInteractDistance(unit,1) then
+                    checkGear.unit = unit
+                    checkGear.name = name
+                    checkGear.known[name] = {}
+                    NotifyInspect(unit)
+                    checkGear:RegisterEvent("INSPECT_READY")
+                    return
+                else
+                     oor = true
+                end
             end
-            end
+            
         end
         if oor then
             checkGear.timer = 3
@@ -182,6 +182,7 @@ end
 function checkGear:WaitForOOR(elapsed)
     self.timer = self.timer - elapsed
     if self.timer < 0 then
+        self.timer = 0
         self:SetScript("OnUpdate",nil)
         self:InspectNextUnit()
     end
@@ -192,7 +193,7 @@ function checkGear:InspectReady()
     checkGear:SetScript("OnUpdate",nil)
     local unit = checkGear.unit
     local missing
-    for i=1,17 do
+    for i=1,17 do   
         if GetInventoryItemID(unit,i) and not GetInventoryItemLink(unit,i) then
             missing = true
         end
@@ -203,6 +204,8 @@ function checkGear:InspectReady()
         return
     end
 
+    -- Show scanned players
+    messageFrame:AddMessage("\n" .. checkGear.name)
     dostuff(unit,checkGear.name)
     checkGear:InspectNextUnit()
 end
