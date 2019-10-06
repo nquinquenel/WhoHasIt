@@ -12,7 +12,7 @@ checkGear:EnableMouseWheel(true)
 checkGear:RegisterForDrag("LeftButton")
 checkGear:SetScript("OnDragStart", checkGear.StartMoving)
 checkGear:SetScript("OnDragStop", checkGear.StopMovingOrSizing)
-checkGear:SetMinResize(150,125)
+checkGear:SetMinResize(155,125)
 
 checkGear:SetBackdrop({
 	bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -51,8 +51,21 @@ messageFrame:SetTextColor(1, 1, 1, 1)
 messageFrame:SetJustifyH("LEFT")
 messageFrame:SetHyperlinksEnabled(true)
 messageFrame:SetFading(false)
-messageFrame:SetMaxLines(300)
+messageFrame:SetMaxLines(500)
 checkGear.messageFrame = messageFrame
+
+-- Players Frame
+local playersFrame = CreateFrame("ScrollingMessageFrame", nil, checkGear)
+playersFrame:SetPoint("LEFT", 20, 0)
+playersFrame:SetSize(checkGear.width - 60, checkGear.height - 50)
+playersFrame:SetFontObject(GameFontNormal)
+playersFrame:SetTextColor(1, 1, 1, 1)
+playersFrame:SetJustifyH("LEFT")
+playersFrame:SetHyperlinksEnabled(true)
+playersFrame:SetFading(false)
+playersFrame:SetMaxLines(100)
+checkGear.playersFrame = playersFrame
+checkGear.playersFrame:Hide();
 
 -- Scrollbar Frame
 local scrollBar = CreateFrame("Slider", nil, checkGear, "UIPanelScrollBarTemplate")
@@ -89,11 +102,37 @@ end)
 
 -- Exit Button
 local b = CreateFrame("Button", "MyButton", checkGear, "UIPanelButtonTemplate")
-b:SetSize(80 ,22)
-b:SetText("Quitter")
+b:SetSize(25 ,22)
+b:SetText("X")
 b:SetPoint("BOTTOM")
 b:SetScript("OnClick", function()
     checkGear:Hide()
+end)
+
+local button_scan = CreateFrame("Button", "ButtonScan", checkGear, "UIPanelButtonTemplate")
+button_scan:SetSize(45 ,22)
+button_scan:SetText("Scan")
+button_scan:SetPoint("BOTTOM", 37, 0)
+button_scan:SetScript("OnClick", function()
+    checkGear:InspectNextUnit()
+end)
+
+local switched = true
+
+local button_switch = CreateFrame("Button", "ButtonSwitch", checkGear, "UIPanelButtonTemplate")
+button_switch:SetSize(55 ,22)
+button_switch:SetText("Switch")
+button_switch:SetPoint("BOTTOM", -42, 0)
+button_switch:SetScript("OnClick", function()
+    if switched then
+        checkGear.messageFrame:Hide();
+        checkGear.playersFrame:Show();
+        switched = false;
+    else
+        checkGear.playersFrame:Hide();
+        checkGear.messageFrame:Show();
+        switched = true;
+    end
 end)
 
 checkGear:Show()
@@ -118,7 +157,9 @@ checkGear:SetScript("OnEvent", function(self, event, ...)
                 if LootSlotHasItem(i) then
                     local itemName2, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount,
                     itemEquipLoc, itemIcon, itemSellPrice, itemClassID = GetItemInfo(GetLootSlotLink(i));
-                    if (itemRarity > 1) and (itemClassID == (2 or 4))  then
+                    print(itemRarity)
+                    print(itemClassID)
+                    if (itemRarity > 1) and (itemClassID == 2 or itemClassID == 4)  then
                         messageFrame:AddMessage("\n" .. itemName2)
                         for k, v in pairs(checkGear.known) do
                             for j = 1, 17 do
@@ -205,7 +246,7 @@ function checkGear:InspectReady()
     end
 
     -- Show scanned players
-    messageFrame:AddMessage("\n" .. checkGear.name)
+    playersFrame:AddMessage(checkGear.name)
     dostuff(unit,checkGear.name)
     checkGear:InspectNextUnit()
 end
